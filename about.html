@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - Saintgits Store</title>
+    <link rel="stylesheet" href="contactstyles.css">
+</head>
+<body>
+    <header>
+        <div class="container header-container">
+            <div class="logo">
+                <a href="home.html">SaintgitsStore</a>
+            </div>
+            <div class="nav-links">
+                <a href="home.html">Home</a>
+                <a href="contact.html">Contact</a>
+                <a href="about.html" class="active">About</a>
+            </div>
+            <div id="fill"></div>
+            <div id="fill"></div>
+            <div 
+ id="profile-button" 
+class="fas fa-sign-out"
+onclick="logout()"
+></div>
+        </div>
+    </header>
+    
+    <div class="contact-container">
+        <div class="contact-info">
+            <img src="logo.png" alt="saintgits-logo" height="50px" width="50px">
+            <h2>About Us</h2>
+            <p>Welcome to Saintgits College of Engineering Store, your one-stop destination for all stationery, books, and essential supplies needed for students and faculty. Our store is dedicated to providing high-quality products at affordable prices.</p>
+            <h3>Our Mission</h3>
+            <p>We aim to support the academic community by offering a wide range of essential products, ensuring convenience and accessibility for everyone at Saintgits College of Engineering.</p>
+            <h3>Contact Information</h3>
+            <p><strong>Address:</strong> Saintgits College of Engineering, Kottayam, Kerala, India</p>
+            <p><strong>Email:</strong> mail@saintgits.org</p>
+            <p><strong>Phone:</strong> +91 481 2436169 / 2436170</p>
+        </div>
+        <div class="contact-form">
+            <img src="saintgits_land.jpg" alt="Saintgits Store" style= "border-radius:10px;" height="100%" width="90%">
+        </div>
+    </div>
+    <script>
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = "login.html";
+            window.history.replaceState(null, null, "login.html");
+ }
+    </script>
+</body>
+</html>

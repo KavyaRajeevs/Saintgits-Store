@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart - College Store</title>
+    <link rel="stylesheet" href="cartstyle.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="container header-container">
+            <div class="logo">
+                <a href="home.html">SaintgitsStore</a>
+            </div>
+            <div class="nav-links">
+                <a href="home.html" class="active">Home</a>
+                <a href="contact.html">Contact</a>
+                <a href="about.html">About</a>
+            </div>
+            <div class="search-cart">
+                <button class="icon-button">
+                    <a href="wishlist.html"><i class="far fa-heart"></i></a>
+                </button>
+                <button class="icon-button">
+                    <a href="cart.html"><i class="fas fa-shopping-cart"></i></a>
+                </button>
+                <div 
+ id="profile-button" 
+class="fas fa-sign-out"
+onclick="logout()"
+></div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <h2 class="cart-title">Your Cart</h2>
+        <div class="cart-container" id="cart-container">
+            <!-- Cart items will appear here -->
+        </div>
+
+        <div class="cart-summary">
+            <h3>Cart Total</h3>
+            <p>Subtotal: ₹<span id="subtotal-price">0</span></p>
+            <p>Shipping: Free</p>
+            <p>Total: ₹<span id="total-price">0</span></p>
+            <button id="checkout-btn" class="checkout-btn">Proceed to Checkout</button>
+        </div>
+    </div>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  
+    
+    <script>
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = "login.html";
+            window.history.replaceState(null, null, "login.html");
+ }
+        // Store wishlist items for easy lookup
+        let wishlistItems = [];
+        let cartItems = []; // Store cart items globally
+
+        // Fetch wishlist data
+        async function fetchWishlist() {
+            try {
+                const res = await fetch('http://localhost:3000/wishlist');
+                wishlistItems = await res.json();
+                return wishlistItems;
+            } catch (error) {
+                console.error('Error fetching wishlist:', error);
+                return [];
+            }
+        }
+
+        // Check if an item is in wishlist
+        function isInWishlist(productId) {
+            return wishlistItems.some(item => item.productId === productId);
+        }
+        function navigateToProduct(productId) {
+    window.location.href = `product.html?id=${productId}`;
+}
+        async function fetchCart() {
+            try {
+                // First fetch wishlist to know which items are already wishlisted
+                await fetchWishlist();
+                
+                const res = await fetch('http://localhost:3000/cart');
+                cartItems = await res.json(); // Store cart items in global variable
+
+                let totalPrice = 0;
+                const container = document.getElementById('cart-container');
+                container.innerHTML = '';
+
+                cartItems.forEach(item => {
+                    totalPrice += item.price * item.quantity;
+                    
+                    // Determine if item is in wishlist
+                    const inWishlist = isInWishlist(item.productId);
+                    const heartIcon = inWishlist ? 'fas fa-heart' : 'far fa-heart';
+                    const heartClass = inWishlist ? 'wishlist-btn wishlist-added' : 'wishlist-btn';
+                    
+                    container.innerHTML += `
+                        <div class="cart-item">
+                            <img src="${item.imageUrl || '/uploads/placeholder.jpg'}" alt="${item.name}" width="100" onclick="navigateToProduct('${item.productId}')" style="cursor: pointer;">
+                            <div class="cart-info">
+                                <h4 onclick="navigateToProduct('${item.productId}')" style="cursor: pointer;">${item.name}</h4>
+                               
+                                <p>Price: ₹${item.price}</p>
+                                <div class="quantity-controls">
+                                    <p>Quantity: 
+                                        <input type="number" class="quantity-input" value="${item.quantity}" min="1" onchange="updateQuantity('${item._id}', this.value)">
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="cart-actions">
+                                <button class="${heartClass}" onclick="toggleWishlist('${item.productId}', '${item.name}',  ${item.price}, '${item.imageUrl}', this)">
+                                    <i class="${heartIcon}"></i>
+                                </button>
+                                <button class="delete-btn" onclick="removeFromCart('${item._id}')">Remove</button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                document.getElementById('subtotal-price').textContent = totalPrice.toFixed(2);
+                document.getElementById('total-price').textContent = totalPrice.toFixed(2);
+            } catch (error) {
+                console.error('Error fetching cart:', error);
+            }
+        }
+
+        async function toggleWishlist(productId, name, price, imageUrl, buttonEl) {
+            try {
+                const inWishlist = isInWishlist(productId);
+                
+                if (inWishlist) {
+                    // Find wishlist item id
+                    const wishlistItem = wishlistItems.find(item => item.productId === productId);
+                    if (wishlistItem) {
+                        await fetch(`http://localhost:3000/wishlist/${wishlistItem._id}`, { 
+                            method: 'DELETE' 
+                        });
+                        
+                        // Update button appearance
+                        buttonEl.innerHTML = '<i class="far fa-heart"></i>';
+                        buttonEl.classList.remove('wishlist-added');
+                        
+                        // Update local wishlist data
+                        wishlistItems = wishlistItems.filter(item => item.productId !== productId);
+                    }
+                } else {
+                    // Add to wishlist
+                    await fetch('http://localhost:3000/wishlist', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ productId, name, price, imageUrl })
+                    });
+                    
+                    // Update button appearance
+                    buttonEl.innerHTML = '<i class="fas fa-heart"></i>';
+                    buttonEl.classList.add('wishlist-added');
+                    
+                    // Update local wishlist data
+                    wishlistItems.push({ productId, name, price, imageUrl });
+                }
+            } catch (error) {
+                console.error('Error updating wishlist:', error);
+            }
+        }
+
+        async function removeFromCart(id) {
+            try {
+                await fetch(`http://localhost:3000/cart/${id}`, { method: 'DELETE' });
+                alert('Item removed from cart');
+                fetchCart();
+            } catch (error) {
+                console.error('Error removing item:', error);
+            }
+        }
+
+        async function updateQuantity(id, quantity) {
+            try {
+                await fetch(`http://localhost:3000/cart/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ quantity: Number(quantity) })
+                });
+                fetchCart();
+            } catch (error) {
+                console.error('Error updating quantity:', error);
+            }
+        }
+
+        // Function to clear the entire cart after successful payment
+        async function clearCart() {
+            try {
+                // Delete each item in the cart one by one
+                const deletePromises = cartItems.map(item => 
+                    fetch(`http://localhost:3000/cart/${item._id}`, { method: 'DELETE' })
+                );
+                
+                await Promise.all(deletePromises);
+                
+                // Refresh the cart display
+                fetchCart();
+            } catch (error) {
+                console.error('Error clearing cart:', error);
+            }
+        }
+
+        document.getElementById('checkout-btn').onclick = function() {
+    // Calculate the current total
+    const totalAmount = parseFloat(document.getElementById('total-price').textContent);
+    
+    if (totalAmount <= 0) {
+        alert("Your cart is empty!");
+        return;
+    }
+    
+    // Get auth token from localStorage
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert("You need to log in to checkout");
+        window.location.href = "login.html"; // Redirect to login
+        return;
+    }
+    
+    fetch('http://localhost:3000/create-order', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`  // Add auth token
+        },
+        body: JSON.stringify({
+            amount: totalAmount
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        var options = {
+            "key": "rzp_test_eOqIOMVuRb8BNl", // Razorpay Key
+            "amount": data.amount, // Amount in paise
+            "currency": "INR",
+            "order_id": data.order_id,
+            "name": "SaintgitsStore",
+            "description": "Payment for Your Order",
+            "image": "logo.png",
+            "handler": function(response) {
+                // Verify the payment
+                fetch('http://localhost:3000/verify-payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_signature: response.razorpay_signature
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("Payment successful! Your order has been placed.");
+                        // Clear the cart after successful payment
+                        clearCart();
+                    } else {
+                        alert("Payment verification failed. Please try again.");
+                    }
+                })
+                .catch(err => {
+                    console.error('Error verifying payment:', err);
+                    alert("Error processing payment. Please try again.");
+                });
+            },
+            "prefill": {
+                "name": localStorage.getItem('name') || "Customer Name",
+                "email": localStorage.getItem('email') || "customer@example.com",
+                "contact": "9876543210"
+            },
+            "theme": {
+                "color": "#0066cc"
+            }
+        };
+        var rzp1 = new Razorpay(options);
+        rzp1.open();
+    })
+    .catch(err => {
+        console.error('Error fetching order:', err);
+        alert("Error creating order. Please try again.");
+    });
+};
+        // Initialize cart when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchCart();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --background-light: #f4f6f7;
+            --text-color: #2c3e50;
+            --border-color: #e0e6ed;
+            --white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            background-color: var(--background-light);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .sidebar {
+            width: 260px;
+            height: 100vh;
+            background: var(--primary-color);
+            color: white;
+            padding-top: 2rem;
+            position: fixed;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-weight: 600;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            flex-grow: 1;
+        }
+
+        .sidebar ul li {
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .sidebar ul li:hover {
+            background-color: var(--secondary-color);
+            border-left-color: white;
+        }
+
+        .sidebar .logout {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: auto;
+        }
+
+        .content {
+            margin-left: 260px;
+            padding: 2rem;
+            width: calc(100% - 260px);
+        }
+
+        .cards {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            gap: 1rem;
+        }
+
+        .card {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            flex-grow: 1;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h3 {
+            color: var(--secondary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .table-container {
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        table th {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+        }
+
+        table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        table tr:last-child td {
+            border-bottom: none;
+        }
+
+        #salesChart {
+            max-height: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Admin Panel</h2>
+        <ul>
+            <li onclick="window.location.href='dashboard.html'">Dashboard</li>
+            <li onclick="window.location.href='admin-add.html'">Products</li>
+            <li class="logout" onclick="logout()">Logout</li>
+        </ul>
+    </div>
+    
+    <div class="content">
+        <div id="dashboard" class="section">
+            <h1>Dashboard Overview</h1>
+            <div class="cards">
+                <div class="card">
+                    <h3>Total Sales</h3>
+                    <p id="totalSales">₹0</p>
+                </div>
+                <div class="card">
+                    <h3>Total Orders</h3>
+                    <p id="totalOrders">0</p>
+                </div>
+                <div class="card">
+                    <h3>Low Stock Items</h3>
+                    <p id="lowStock">0</p>
+                </div>
+            </div>
+            <div class="table-container">
+                <h3>Recent Sales</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Product</th>
+                            <th>Quantity</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="salesData">
+                        <tr>
+                            <td colspan="4">No sales data available</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="chart-container" style="margin-top: 2rem;">
+                <canvas id="salesChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = "login.html";
+            window.history.replaceState(null, null, "login.html");
+        }
+
+        window.onload = function() {
+            if (!localStorage.getItem('token')) {
+                window.location.href = "login.html";
+            } else {
+                loadDashboardData();
+            }
+        };
+
+        // Function to load all dashboard data
+        async function loadDashboardData() {
+            try {
+                await Promise.all([
+                    loadSummaryData(),
+                    loadRecentSales(),
+                    loadSalesChart()
+                ]);
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        // Function to load summary data (total sales, orders, low stock)
+        async function loadSummaryData() {
+            try {
+                // Fetch orders for total sales and orders count
+                const ordersResponse = await fetch('http://localhost:3000/orders', {
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    }
+                });
+                const orders = await ordersResponse.json();
+                
+                // Calculate total sales
+                let totalSalesAmount = 0;
+                orders.forEach(order => {
+                    if (order.status === 'paid') {
+                        totalSalesAmount += order.amount;
+                    }
+                });
+                
+                // Get total paid orders
+                const paidOrders = orders.filter(order => order.status === 'paid').length;
+                
+                // Fetch products to check for low stock
+                const productsResponse = await fetch('http://localhost:3000/college_store', {
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    }
+                });
+                const products = await productsResponse.json();
+                
+                // Consider items with stock less than 10 as low stock
+                const lowStockCount = products.filter(product => product.instock < 10).length;
+                
+                // Update the UI
+                document.getElementById('totalSales').textContent = '₹' + totalSalesAmount.toLocaleString();
+                document.getElementById('totalOrders').textContent = paidOrders;
+                document.getElementById('lowStock').textContent = lowStockCount;
+            } catch (error) {
+                console.error('Error loading summary data:', error);
+            }
+        }
+
+        // Function to load recent sales data
+        async function loadRecentSales() {
+            try {
+                const response = await fetch('http://localhost:3000/orders', {
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    }
+                });
+                const orders = await response.json();
+                
+                // Filter only paid orders
+                const paidOrders = orders.filter(order => order.status === 'paid');
+                
+                const salesDataContainer = document.getElementById('salesData');
+                
+                if (paidOrders.length === 0) {
+                    salesDataContainer.innerHTML = `
+                        <tr>
+                            <td colspan="4">No sales data available</td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                // Clear the container
+                salesDataContainer.innerHTML = '';
+                
+                // Get the 5 most recent orders
+                const recentOrders = paidOrders.slice(0, 5);
+                
+                // Create row for each order
+                recentOrders.forEach(order => {
+                    // For each item in the order
+                    if (order.items && order.items.length > 0) {
+                        order.items.forEach(item => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${order.orderId.substring(0, 8)}...</td>
+                                <td>${item.name}</td>
+                                <td>${item.quantity}</td>
+                                <td>₹${(item.price * item.quantity).toLocaleString()}</td>
+                            `;
+                            salesDataContainer.appendChild(row);
+                        });
+                    } else {
+                        // For orders without detailed items
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${order.orderId.substring(0, 8)}...</td>
+                            <td>Unknown</td>
+                            <td>-</td>
+                            <td>₹${order.amount.toLocaleString()}</td>
+                        `;
+                        salesDataContainer.appendChild(row);
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading recent sales:', error);
+            }
+        }
+
+        // Function to load sales chart data
+        async function loadSalesChart() {
+            try {
+                const response = await fetch('http://localhost:3000/orders', {
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    }
+                });
+                const orders = await response.json();
+                
+                // Filter paid orders only
+                const paidOrders = orders.filter(order => order.status === 'paid');
+                
+                // Group by date
+                const salesByDate = {};
+                
+                paidOrders.forEach(order => {
+                    const date = new Date(order.date).toLocaleDateString();
+                    if (!salesByDate[date]) {
+                        salesByDate[date] = 0;
+                    }
+                    salesByDate[date] += order.amount;
+                });
+                
+                // Convert to arrays for Chart.js
+                const dates = Object.keys(salesByDate).sort((a, b) => new Date(a) - new Date(b));
+                const amounts = dates.map(date => salesByDate[date]);
+                
+                // Create chart
+                new Chart(document.getElementById('salesChart'), {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: 'Total Sales',
+                            data: amounts,
+                            borderColor: '#2c3e50',
+                            backgroundColor: 'rgba(44, 62, 80, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Sales Trend'
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading sales chart data:', error);
+            }
+        }
+    </script>
+</body>
+</html>

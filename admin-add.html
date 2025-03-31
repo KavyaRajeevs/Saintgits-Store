@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Store Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --background-light: #f4f6f7;
+            --text-color: #2c3e50;
+            --border-color: #e0e6ed;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-light);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 1.5rem;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .back-button {
+            background-color: transparent;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        h2 {
+            color: var(--primary-color);
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .form-section, .table-section {
+            background-color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+        }
+
+        .search-container {
+            display: flex;
+            margin-bottom: 1rem;
+        }
+
+        #searchInput {
+            flex-grow: 1;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        form input, form select {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        form input:focus, form select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        form button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        form button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        table th {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+        }
+
+        table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-buttons button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+
+        .edit-btn {
+            background-color: #f39c12;
+            color: white;
+        }
+
+        .delete-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .action-buttons button:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-button" onclick="window.location.href=`dashboard.html`">← Back</button>
+            <h2>Stock Management</h2>
+        </div>
+
+        <div class="form-section">
+            <h3>Add New Product</h3>
+            <form id="productForm" enctype="multipart/form-data">
+                <div class="form-row">
+                    <input type="text" id="name" placeholder="Product Name" required>
+                    <input type="text" id="color" placeholder="Color (optional)">
+                </div>
+                <select id="size">
+                    <option value="Small">Small</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Large">Large</option>
+                </select>
+                <input type="text" id="company" placeholder="Company" required>
+                <select id="category">
+                    <option value="Writing Supplies">Writing Supplies</option>
+                    <option value="Notebooks">Notebooks</option>
+                    <option value="Paper Products">Paper Products</option>
+                    <option value="Records">Records</option>
+                    <option value="Art & Craft Supplies">Art & Craft Supplies</option>
+                </select>
+                <input type="number" id="price" placeholder="Price" required>
+                <input type="number" id="instock" placeholder="Stock Quantity" required>
+                <input type="file" id="image" required>
+                <button type="submit">Add Product</button>
+            </form>
+        </div>
+
+        <div class="table-section">
+            <h3>All Products</h3>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search products...">
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Color</th>
+                        <th>Size</th>
+                        <th>Company</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Stock</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="productTable">
+                    <!-- Products will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('productForm');
+        const tableBody = document.getElementById('productTable');
+        const searchInput = document.getElementById('searchInput');
+        let allProducts = [];
+
+        // Fetch products from backend
+        async function fetchProducts() {
+            const res = await fetch('http://localhost:3000/college_store');
+            allProducts = await res.json();
+            renderProducts(allProducts);
+        }
+
+        // Render products with optional filtering
+        function renderProducts(products) {
+            tableBody.innerHTML = '';
+            products.forEach(product => {
+                tableBody.innerHTML += `
+                    <tr>
+                        <td>${product.name}</td>
+                        <td>${product.color || '-'}</td>
+                        <td>${product.size}</td>
+                        <td>${product.company}</td>
+                        <td>${product.category}</td>
+                        <td> ₹${product.price.toFixed(2)}</td>
+                        <td>${product.instock}</td>
+                        <td class="action-buttons">
+                            <button class="edit-btn" onclick="editProduct('${product._id}')">Edit</button>
+                            <button class="delete-btn" onclick="deleteProduct('${product._id}')">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Search functionality
+        searchInput.addEventListener('input', () => {
+            const searchTerm = searchInput.value.toLowerCase();
+            const filteredProducts = allProducts.filter(product => 
+                product.name.toLowerCase().includes(searchTerm) ||
+                product.company.toLowerCase().includes(searchTerm) ||
+                product.category.toLowerCase().includes(searchTerm)
+            );
+            renderProducts(filteredProducts);
+        });
+
+        // Redirect to edit.html with product ID
+        function editProduct(id) {
+            window.location.href = `edit.html?_id=${id}`;
+        }
+
+        // Delete product
+        async function deleteProduct(id) {
+            await fetch(`http://localhost:3000/college_store/${id}`, {
+                method: 'DELETE'
+            });
+            fetchProducts();
+        }
+
+        // Add new product with FormData (to support file uploads)
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData();
+            formData.append('name', form.name.value);
+            formData.append('color', form.color.value);
+            formData.append('size', form.size.value);
+            formData.append('company', form.company.value);
+            formData.append('category', form.category.value);
+            formData.append('price', form.price.value);
+            formData.append('instock', form.instock.value);
+            formData.append('image', form.image.files[0]);
+
+            await fetch('http://localhost:3000/college_store', {
+                method: 'POST',
+                body: formData
+            });
+
+            form.reset();
+            fetchProducts();
+        });
+
+        fetchProducts();
+    </script>
+</body>
+</html>
